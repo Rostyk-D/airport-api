@@ -1,0 +1,9 @@
+# Main
+django
+djangorestframework
+
+# DB: Postgres
+psycopg2-binary
+
+# Instruments
+python-dotenv
