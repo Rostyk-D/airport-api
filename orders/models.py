@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.db import models
 
+from flights.models import Flight
+
+
 class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(

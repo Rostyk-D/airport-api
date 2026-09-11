@@ -1,4 +1,5 @@
 from django.db import models
+from airports.models import Route
 
 class Crew(models.Model):
     first_name = models.CharField(max_length=100)
