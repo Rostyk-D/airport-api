@@ -15,8 +15,34 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from airports.views import AirportViewSet, RouteViewSet
+from flights.views import (
+    AirplaneTypeViewSet,
+    AirplaneViewSet,
+    CrewViewSet,
+    FlightViewSet,
+)
+from orders.views import OrderViewSet, TicketViewSet
+from users.views import UserViewSet
+
+
+router = DefaultRouter()
+
+router.register("airports", AirportViewSet)
+router.register("routes", RouteViewSet)
+router.register("crew", CrewViewSet)
+router.register("airplane-types", AirplaneTypeViewSet)
+router.register("airplanes", AirplaneViewSet)
+router.register("flights", FlightViewSet)
+router.register("orders", OrderViewSet)
+router.register("tickets", TicketViewSet)
+router.register("users", UserViewSet)
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),
 ]
