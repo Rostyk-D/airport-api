@@ -9,7 +9,7 @@ class AirportsSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
-            "closed_big_city"
+            "closest_big_city"
         )
 
 
