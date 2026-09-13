@@ -9,6 +9,6 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
 
-class TicketViewSet(viewsets.ModelViewSet):
+class TicketViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
