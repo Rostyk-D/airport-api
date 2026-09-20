@@ -1,6 +1,7 @@
 # Main
 django
 djangorestframework
+djangorestframework-simplejwt
 
 # DB: Postgres
 psycopg2-binary
