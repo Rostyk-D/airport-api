@@ -30,4 +30,15 @@ class Migration(migrations.Migration):
                 ),
             ),
         ),
+        migrations.AddConstraint(
+            model_name="airplane",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    min_baggage_weight__lte=models.F(
+                        "max_baggage_weight"
+                    )
+                ),
+                name="airplane_baggage_weight_range_valid",
+            ),
+        ),
     ]
