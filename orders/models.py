@@ -17,8 +17,18 @@ class Order(models.Model):
 
 
 class Ticket(models.Model):
+    BAGGAGE_WEIGHT_CHOICES = (
+        (2, "Up to 2 kg"),
+        (5, "Up to 5 kg"),
+        (10, "Up to 10 kg"),
+    )
+
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
+    baggage_weight = models.PositiveSmallIntegerField(
+        choices=BAGGAGE_WEIGHT_CHOICES,
+        default=2,
+    )
     flight = models.ForeignKey(
         Flight,
         on_delete=models.CASCADE,
@@ -33,6 +43,6 @@ class Ticket(models.Model):
     def __str__(self):
         return (
             f"Flight {self.flight_id}: "
-            f"row {self.row}, seat {self.seat}"
+            f"row {self.row}, seat {self.seat}, "
+            f"baggage {self.baggage_weight} kg"
         )
-
