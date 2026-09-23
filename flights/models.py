@@ -37,6 +37,18 @@ class Airplane(models.Model):
         related_name="airplanes",
     )
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    min_baggage_weight__lte=models.F(
+                        "max_baggage_weight"
+                    )
+                ),
+                name="airplane_baggage_weight_range_valid",
+            )
+        ]
+
     def clean(self):
         if self.min_baggage_weight > self.max_baggage_weight:
             raise ValidationError(
