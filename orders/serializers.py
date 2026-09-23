@@ -13,6 +13,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "row",
             "seat",
             "flight",
+            "baggage_weight",
             "order",
         )
         read_only_fields = ("id", "order")
@@ -21,6 +22,7 @@ class TicketSerializer(serializers.ModelSerializer):
         flight = attrs["flight"]
         row = attrs["row"]
         seat = attrs["seat"]
+        baggage_weight = attrs["baggage_weight"]
 
         if flight.departure_time <= timezone.now():
             raise serializers.ValidationError(
@@ -29,6 +31,26 @@ class TicketSerializer(serializers.ModelSerializer):
             )
 
         airplane = flight.airplane
+
+        if baggage_weight < airplane.min_baggage_weight:
+            raise serializers.ValidationError(
+                {
+                    "baggage_weight": (
+                        f"Baggage weight cannot be less than "
+                        f"{airplane.min_baggage_weight} kg."
+                    )
+                }
+            )
+
+        if baggage_weight > airplane.max_baggage_weight:
+            raise serializers.ValidationError(
+                {
+                    "baggage_weight": (
+                        f"Baggage weight cannot be greater than "
+                        f"{airplane.max_baggage_weight} kg."
+                    )
+                }
+            )
 
         if row < 1 or row > airplane.rows:
             raise serializers.ValidationError(
