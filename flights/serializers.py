@@ -3,6 +3,9 @@ from rest_framework import serializers
 from flights.models import Flight, Airplane, AirplaneType, Crew
 
 
+AVAILABLE_BAGGAGE_WEIGHTS = (2, 5, 10)
+
+
 class CrewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crew
@@ -52,6 +55,23 @@ class AirplaneSerializer(serializers.ModelSerializer):
                         "Maximum baggage weight cannot be less "
                         "than minimum baggage weight."
                     )
+                }
+            )
+
+        if not any(
+            min_weight <= weight <= max_weight
+            for weight in AVAILABLE_BAGGAGE_WEIGHTS
+        ):
+            raise serializers.ValidationError(
+                {
+                    "min_baggage_weight": (
+                        "The baggage range must include at least "
+                        "one available option: 2, 5 or 10 kg."
+                    ),
+                    "max_baggage_weight": (
+                        "The baggage range must include at least "
+                        "one available option: 2, 5 or 10 kg."
+                    ),
                 }
             )
 
