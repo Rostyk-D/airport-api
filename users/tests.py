@@ -23,6 +23,30 @@ class UserApiTests(APITestCase):
             User.objects.filter(username="newuser").exists()
         )
 
+    def test_duplicate_email_is_rejected(self):
+        User.objects.create_user(
+            username="user1",
+            email="user@example.com",
+            password="StrongPass123!",
+        )
+
+        response = self.client.post(
+            "/api/users/",
+            {
+                "username": "user2",
+                "email": "USER@example.com",
+                "password": "StrongPass123!",
+                "first_name": "User",
+                "last_name": "Two",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_users_endpoint_is_admin_only(self):
         user = User.objects.create_user(
             username="user1",

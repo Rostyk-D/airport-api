@@ -96,6 +96,24 @@ class OrderAndTicketApiTests(APITestCase):
             self.user.id,
         )
 
+    def test_user_cannot_access_other_users_order(self):
+        own_order = Order.objects.create(user=self.user)
+        other_order = Order.objects.create(user=self.other_user)
+
+        self.client.force_authenticate(self.user)
+        own_response = self.client.get(
+            f"/api/orders/{own_order.id}/"
+        )
+        other_response = self.client.get(
+            f"/api/orders/{other_order.id}/"
+        )
+
+        self.assertEqual(own_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            other_response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
     def test_admin_sees_all_orders(self):
         Order.objects.create(user=self.user)
         Order.objects.create(user=self.other_user)
@@ -134,10 +152,7 @@ class OrderAndTicketApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["tickets"]), 2)
-        self.assertEqual(
-            self.flight.tickets.count(),
-            2,
-        )
+        self.assertEqual(self.flight.tickets.count(), 2)
 
     def test_user_cannot_update_or_delete_order(self):
         order = Order.objects.create(user=self.user)
@@ -261,4 +276,16 @@ class OrderAndTicketApiTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_tickets_are_read_only(self):
+        response = self.client.post(
+            "/api/tickets/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
         )

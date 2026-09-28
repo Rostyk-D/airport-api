@@ -1,6 +1,5 @@
 from datetime import date
 
-from django.db.models import Q
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -111,9 +110,7 @@ class FlightViewSet(viewsets.ModelViewSet):
             except ValueError as exc:
                 raise ValidationError(
                     {
-                        "departure_date": (
-                            "Use YYYY-MM-DD format."
-                        )
+                        "departure_date": "Use YYYY-MM-DD format.",
                     }
                 ) from exc
 

@@ -39,3 +39,4 @@ class TicketViewSet(viewsets.ReadOnlyModelViewSet):
         "order",
     )
     serializer_class = TicketSerializer
+    permission_classes = (permissions.AllowAny,)
