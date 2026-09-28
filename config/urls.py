@@ -7,19 +7,17 @@ Function views
     1. Add an import:  from my_app import views
     2. Add a URL to urlpatterns:  path('', views.home, name='home')
 Class-based views
-    1. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+    1. Add an import:  from blog import views
+    2. Add an URL to urlpatterns:  path('blog/', views.Home.as_view(), name='home')
 Including another URLconf
-    1. Add an import:  from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+    2. Add an import:  from blog import urls
+    3. Add an URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from airports.views import AirportViewSet, RouteViewSet
 from flights.views import (
@@ -29,7 +27,7 @@ from flights.views import (
     FlightViewSet,
 )
 from orders.views import OrderViewSet, TicketViewSet
-from users.views import UserViewSet
+from users.views import EmailTokenObtainPairView, UserViewSet
 
 
 router = DefaultRouter()
@@ -47,7 +45,15 @@ router.register("users", UserViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(
+        "api/users/login/",
+        EmailTokenObtainPairView.as_view(),
+        name="token_obtain_pair",
+    ),
+    path(
+        "api/users/login/refresh/",
+        TokenRefreshView.as_view(),
+        name="token_refresh",
+    ),
     path("api/", include(router.urls)),
-    path("api/users/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/users/login/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
