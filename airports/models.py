@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -20,7 +21,17 @@ class Route(models.Model):
         on_delete=models.CASCADE,
         related_name="routes_to",
     )
-    distance = models.PositiveIntegerField()
+    distance = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(source=models.F("destination")),
+                name="route_source_different_from_destination",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.source} - {self.destination}"
