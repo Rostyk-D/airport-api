@@ -1,9 +1,6 @@
 from rest_framework import serializers
 
-from flights.models import Flight, Airplane, AirplaneType, Crew
-
-
-AVAILABLE_BAGGAGE_WEIGHTS = (2, 5, 10)
+from flights.models import Airplane, AirplaneType, Crew, Flight
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -33,49 +30,8 @@ class AirplaneSerializer(serializers.ModelSerializer):
             "name",
             "rows",
             "seats_in_row",
-            "min_baggage_weight",
-            "max_baggage_weight",
             "airplane_type",
         )
-
-    def validate(self, attrs):
-        min_weight = attrs.get(
-            "min_baggage_weight",
-            getattr(self.instance, "min_baggage_weight", 2),
-        )
-        max_weight = attrs.get(
-            "max_baggage_weight",
-            getattr(self.instance, "max_baggage_weight", 10),
-        )
-
-        if min_weight > max_weight:
-            raise serializers.ValidationError(
-                {
-                    "max_baggage_weight": (
-                        "Maximum baggage weight cannot be less "
-                        "than minimum baggage weight."
-                    )
-                }
-            )
-
-        if not any(
-            min_weight <= weight <= max_weight
-            for weight in AVAILABLE_BAGGAGE_WEIGHTS
-        ):
-            raise serializers.ValidationError(
-                {
-                    "min_baggage_weight": (
-                        "The baggage range must include at least "
-                        "one available option: 2, 5 or 10 kg."
-                    ),
-                    "max_baggage_weight": (
-                        "The baggage range must include at least "
-                        "one available option: 2, 5 or 10 kg."
-                    ),
-                }
-            )
-
-        return attrs
 
 
 class FlightSerializer(serializers.ModelSerializer):
