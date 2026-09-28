@@ -1,15 +1,8 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from orders.models import Order, Ticket
-
-
-BAGGAGE_WEIGHT_BY_TICKET_TYPE = {
-    1: (1, 2),
-    2: (3, 5),
-    3: (6, 10),
-}
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -43,7 +36,9 @@ class TicketSerializer(serializers.ModelSerializer):
                 }
             )
 
-        min_weight, max_weight = BAGGAGE_WEIGHT_BY_TICKET_TYPE[ticket_type]
+        min_weight, max_weight = (
+            Ticket.TICKET_TYPE_WEIGHT_RANGES[ticket_type]
+        )
 
         if not min_weight <= baggage_weight <= max_weight:
             raise serializers.ValidationError(
@@ -84,7 +79,9 @@ class TicketSerializer(serializers.ModelSerializer):
 
         current_order = self.context.get("order_instance")
         if current_order is not None:
-            occupied_seats = occupied_seats.exclude(order=current_order)
+            occupied_seats = occupied_seats.exclude(
+                order=current_order
+            )
 
         if occupied_seats.exists():
             raise serializers.ValidationError(
@@ -155,15 +152,25 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tickets_data = validated_data.pop("tickets")
 
-        order = Order.objects.create(
-            user=self.context["request"].user,
-        )
-
-        for ticket_data in tickets_data:
-            Ticket.objects.create(
-                order=order,
-                **ticket_data,
+        try:
+            order = Order.objects.create(
+                user=self.context["request"].user,
             )
+
+            for ticket_data in tickets_data:
+                Ticket.objects.create(
+                    order=order,
+                    **ticket_data,
+                )
+        except IntegrityError as exc:
+            raise serializers.ValidationError(
+                {
+                    "tickets": (
+                        "One or more selected seats are no longer "
+                        "available."
+                    )
+                }
+            ) from exc
 
         return order
 
@@ -173,12 +180,22 @@ class OrderSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         if tickets_data is not None:
-            Ticket.objects.filter(order=instance).delete()
+            try:
+                Ticket.objects.filter(order=instance).delete()
 
-            for ticket_data in tickets_data:
-                Ticket.objects.create(
-                    order=instance,
-                    **ticket_data,
-                )
+                for ticket_data in tickets_data:
+                    Ticket.objects.create(
+                        order=instance,
+                        **ticket_data,
+                    )
+            except IntegrityError as exc:
+                raise serializers.ValidationError(
+                    {
+                        "tickets": (
+                            "One or more selected seats are no longer "
+                            "available."
+                        )
+                    }
+                ) from exc
 
         return instance

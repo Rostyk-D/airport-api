@@ -23,6 +23,11 @@ class Ticket(models.Model):
         (2, "Medium"),
         (3, "Heavy"),
     )
+    TICKET_TYPE_WEIGHT_RANGES = {
+        1: (1, 2),
+        2: (3, 5),
+        3: (6, 10),
+    }
 
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
@@ -69,6 +74,26 @@ class Ticket(models.Model):
                     ticket_type__lte=3,
                 ),
                 name="ticket_type_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        ticket_type=1,
+                        baggage_weight__gte=1,
+                        baggage_weight__lte=2,
+                    )
+                    | models.Q(
+                        ticket_type=2,
+                        baggage_weight__gte=3,
+                        baggage_weight__lte=5,
+                    )
+                    | models.Q(
+                        ticket_type=3,
+                        baggage_weight__gte=6,
+                        baggage_weight__lte=10,
+                    )
+                ),
+                name="ticket_type_baggage_range_valid",
             ),
         ]
 
