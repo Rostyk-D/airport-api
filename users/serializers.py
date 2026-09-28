@@ -1,4 +1,7 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from users.models import User
 
@@ -33,3 +36,32 @@ class UserCreationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+    )
+
+    def validate(self, attrs):
+        email = attrs["email"].lower()
+        password = attrs["password"]
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist as exc:
+            raise AuthenticationFailed("Invalid email or password.") from exc
+        except User.MultipleObjectsReturned as exc:
+            raise AuthenticationFailed("Invalid email or password.") from exc
+
+        if not user.is_active or not user.check_password(password):
+            raise AuthenticationFailed("Invalid email or password.")
+
+        refresh = self.get_token(user)
+
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
