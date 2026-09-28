@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 
 from airports.models import Route
@@ -23,42 +22,11 @@ class Airplane(models.Model):
     name = models.CharField(max_length=100)
     rows = models.PositiveIntegerField()
     seats_in_row = models.PositiveIntegerField()
-    min_baggage_weight = models.PositiveIntegerField(
-        default=2,
-        help_text="Minimum baggage weight allowed for one passenger, kg.",
-    )
-    max_baggage_weight = models.PositiveIntegerField(
-        default=10,
-        help_text="Maximum baggage weight allowed for one passenger, kg.",
-    )
     airplane_type = models.ForeignKey(
         AirplaneType,
         on_delete=models.CASCADE,
         related_name="airplanes",
     )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(
-                    min_baggage_weight__lte=models.F(
-                        "max_baggage_weight"
-                    )
-                ),
-                name="airplane_baggage_weight_range_valid",
-            )
-        ]
-
-    def clean(self):
-        if self.min_baggage_weight > self.max_baggage_weight:
-            raise ValidationError(
-                {
-                    "max_baggage_weight": (
-                        "Maximum baggage weight cannot be less "
-                        "than minimum baggage weight."
-                    )
-                }
-            )
 
     def __str__(self):
         return self.name
