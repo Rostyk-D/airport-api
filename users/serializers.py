@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -44,6 +43,10 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         write_only=True,
         style={"input_type": "password"},
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("username", None)
 
     def validate(self, attrs):
         email = attrs["email"].lower()
