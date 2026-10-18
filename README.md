@@ -2,10 +2,16 @@
 
 Django REST Framework API for airports, routes, airplanes, flights, tickets and orders.
 
+---
+## DB diagram
+![img.png](Images_README/img.png)
+
+---
 ## Authentication
 
 The API uses JWT authentication.
 
+---
 ### Login
 
 `POST /api/users/login/`
@@ -35,6 +41,7 @@ Refresh an access token:
 
 Access tokens live for 1 day and refresh tokens live for 2 days.
 
+---
 ## Permissions
 
 Airports, routes, crew, airplane types, airplanes and flights can be viewed publicly.
@@ -51,6 +58,7 @@ Orders require authentication:
 
 Tickets are read-only through the API. Tickets are created together with an order.
 
+---
 ## Tickets and baggage
 
 Each ticket has a type:
@@ -85,6 +93,7 @@ Example order with two tickets:
 
 The API also validates the flight date, row and seat limits, seat availability, duplicate seats inside one order, and the minimum of one ticket per order.
 
+---
 ## Flights
 
 Filter by route:
@@ -119,6 +128,7 @@ Available seats for a flight:
 
 `GET /api/flights/1/available-seats/`
 
+---
 ## API documentation
 
 Swagger UI:
@@ -129,6 +139,7 @@ OpenAPI schema:
 
 `GET /api/schema/`
 
+---
 ## Run locally
 
 Install dependencies:
