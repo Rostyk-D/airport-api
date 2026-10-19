@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -9,6 +10,12 @@ from users.serializers import (
 )
 
 
+@extend_schema(
+    tags=["Users"],
+    description=(
+        "Public registration is available. User listing and management require staff access."
+    ),
+)
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.order_by("pk")
 
@@ -24,5 +31,13 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
 
+@extend_schema(
+    tags=["Authentication"],
+    summary="Obtain JWT tokens",
+    description=(
+        "Sign in using email and password. Use the access token with the "
+        "Authorization: Bearer header for protected endpoints."
+    ),
+)
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
