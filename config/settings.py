@@ -15,17 +15,22 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "django-insecure-6vubhk2$++agnctay_4pxy_8cq)mosmn(*-#2b^v4cgsh-^!i3"
-)
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY and DEBUG:
+    # Development-only fallback. Production must provide SECRET_KEY explicitly.
+    SECRET_KEY = "django-insecure-local-development-only-change-me"
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "Set the SECRET_KEY environment variable when DEBUG is False."
+    )
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,web").split(",") if host.strip()]
 
