@@ -1,9 +1,18 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, viewsets
 
 from orders.models import Order, Ticket
 from orders.serializers import OrderSerializer, TicketSerializer
 
 
+@extend_schema(
+    tags=["Orders"],
+    description=(
+        "Orders require authentication. Regular users can access only their own "
+        "orders; staff users can manage all orders. An order must contain at least "
+        "one ticket, submitted as a nested list."
+    ),
+)
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = (
         Order.objects
@@ -34,6 +43,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         return context
 
 
+@extend_schema(
+    tags=["Tickets"],
+    description="Tickets are read-only through this API and are created together with an order.",
+)
 class TicketViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ticket.objects.select_related(
         "flight__airplane",
