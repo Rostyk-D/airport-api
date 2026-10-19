@@ -97,10 +97,40 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Airport API",
     "DESCRIPTION": (
-        "Airport, flight, ticket and order management API."
+        "REST API for airport operations: airports, routes, airplanes, "
+        "crew, flights, seat availability, orders, tickets and users.\n\n"
+        "Authentication uses JWT. Click Authorize in Swagger UI and enter "
+        "'Bearer <access_token>' to call protected endpoints.\n\n"
+        "Permissions: airport/route/flight and fleet data are publicly "
+        "readable; write operations require staff access. Orders require "
+        "authentication and regular users can access only their own orders. "
+        "User management is staff-only except public registration."
     ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": True,
+    "TAGS": [
+        {"name": "Authentication", "description": "Obtain and refresh JWT tokens."},
+        {"name": "Airports", "description": "Airport directory."},
+        {"name": "Routes", "description": "Routes between airports."},
+        {"name": "Crew", "description": "Flight crew members."},
+        {"name": "Airplane types", "description": "Aircraft type catalogue."},
+        {"name": "Airplanes", "description": "Aircraft and seating capacity."},
+        {"name": "Flights", "description": "Flight schedules, filters and available seats."},
+        {"name": "Orders", "description": "Create and manage ticket orders."},
+        {"name": "Tickets", "description": "Read ticket information."},
+        {"name": "Users", "description": "Registration and user administration."},
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": False,
+        "filter": True,
+        "persistAuthorization": True,
+        "tryItOutEnabled": True,
+        "displayRequestDuration": True,
+        "docExpansion": "list",
+    },
 }
 
 if os.getenv("DB_ENGINE", "sqlite").lower() == "postgres":
