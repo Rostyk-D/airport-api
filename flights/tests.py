@@ -129,8 +129,7 @@ class FlightApiTests(APITestCase):
         Ticket.objects.create(
             row=1,
             seat=1,
-            ticket_type=1,
-            baggage_weight=2,
+            baggage_type=2,
             flight=self.flight,
             order=order,
         )
