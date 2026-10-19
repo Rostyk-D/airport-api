@@ -1,9 +1,8 @@
 # Main
 django
 djangorestframework
-
-# DB: Postgres
-psycopg2-binary
+djangorestframework-simplejwt
+drf-spectacular
 
 # Instruments
 python-dotenv

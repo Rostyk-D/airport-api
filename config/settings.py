@@ -11,31 +11,29 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
-
+from datetime import timedelta
 from pathlib import Path
+
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "django-insecure-6vubhk2$++agnctay_4pxy_8cq)mosmn(*-#2b^v4cgsh-^!i3"
-)
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY and DEBUG:
+    # Development-only fallback. Production must provide SECRET_KEY explicitly.
+    SECRET_KEY = "django-insecure-local-development-only-change-me"
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "Set the SECRET_KEY environment variable when DEBUG is False."
+    )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,web").split(",") if host.strip()]
 
-ALLOWED_HOSTS = []
-
-
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -46,8 +44,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    "airport",
-    "orders"
+    "drf_spectacular",
+    "airports",
+    "orders",
     "flights",
     "users",
 ]
@@ -82,39 +81,108 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.AllowAny",
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": (
+        "config.pagination.StandardResultsSetPagination"
+    ),
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
+}
 
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Airport API",
+    "DESCRIPTION": (
+        "REST API for airport operations: airports, routes, airplanes, "
+        "crew, flights, seat availability, orders, tickets and users.\n\n"
+        "Authentication uses JWT. Click Authorize in Swagger UI and enter "
+        "'Bearer <access_token>' to call protected endpoints.\n\n"
+        "Permissions: airport/route/flight and fleet data are publicly "
+        "readable; write operations require staff access. Orders require "
+        "authentication and regular users can access only their own orders. "
+        "User management is staff-only except public registration."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": True,
+    "TAGS": [
+        {"name": "Authentication", "description": "Obtain and refresh JWT tokens."},
+        {"name": "Airports", "description": "Airport directory."},
+        {"name": "Routes", "description": "Routes between airports."},
+        {"name": "Crew", "description": "Flight crew members."},
+        {"name": "Airplane types", "description": "Aircraft type catalogue."},
+        {"name": "Airplanes", "description": "Aircraft and seating capacity."},
+        {"name": "Flights", "description": "Flight schedules, filters and available seats."},
+        {"name": "Orders", "description": "Create and manage ticket orders."},
+        {"name": "Tickets", "description": "Read ticket information."},
+        {"name": "Users", "description": "Registration and user administration."},
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": False,
+        "filter": True,
+        "persistAuthorization": True,
+        "tryItOutEnabled": True,
+        "displayRequestDuration": True,
+        "docExpansion": "list",
+    },
+}
+
+if os.getenv("DB_ENGINE", "sqlite").lower() == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", "airport_db"),
+            "USER": os.getenv("POSTGRES_USER", "airport_user"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "airport_password"),
+            "HOST": os.getenv("DB_HOST", "db"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
     },
 ]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
@@ -124,14 +192,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
 STATIC_URL = "static/"
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
