@@ -140,6 +140,24 @@ OpenAPI schema:
 `GET /api/schema/`
 
 ---
+## Run with Docker
+
+Docker Compose uses SQLite; no PostgreSQL service is required.
+
+Build the image and start the API:
+
+```bash
+docker compose up --build
+```
+
+The API will be available at `http://localhost:8000/`. Migrations run automatically when the container starts. The project directory is mounted into the container, so code changes and the SQLite database file remain on your machine.
+
+Stop the container:
+
+```bash
+docker compose down
+```
+
 ## Run locally
 
 Install dependencies:
