@@ -1,5 +1,11 @@
 from datetime import date
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -14,6 +20,7 @@ from flights.models import (
 from flights.serializers import (
     AirplaneSerializer,
     AirplaneTypeSerializer,
+    AvailableSeatsResponseSerializer,
     CrewSerializer,
     FlightSerializer,
 )
@@ -21,24 +28,95 @@ from orders.models import Ticket
 from users.permissions import IsAdminOrReadOnly
 
 
+@extend_schema(tags=["Crew"])
 class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.order_by("pk")
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
+@extend_schema(tags=["Airplane types"])
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.order_by("pk")
     serializer_class = AirplaneTypeSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
+@extend_schema(tags=["Airplanes"])
 class AirplaneViewSet(viewsets.ModelViewSet):
     queryset = Airplane.objects.order_by("pk")
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
+@extend_schema(tags=["Flights"])
+@extend_schema_view(
+    list=extend_schema(
+        summary="List and filter flights",
+        description=(
+            "Returns paginated flights. Filter by route, airplane, source "
+            "airport, destination airport or departure date. Search supports "
+            "airport names, cities, airplane names and airplane types. "
+            "Use ordering to sort by departure time, arrival time or route distance."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="route",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by route ID.",
+            ),
+            OpenApiParameter(
+                name="airplane",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by airplane ID.",
+            ),
+            OpenApiParameter(
+                name="source",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by source airport ID.",
+            ),
+            OpenApiParameter(
+                name="destination",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by destination airport ID.",
+            ),
+            OpenApiParameter(
+                name="departure_date",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description="Filter by departure date (YYYY-MM-DD).",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Search airport/city, airplane and airplane type names.",
+            ),
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Sort by departure_time, arrival_time or route__distance. Prefix with '-' for descending order.",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Page number.",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Results per page (maximum 100).",
+            ),
+        ],
+    ),
+)
 class FlightViewSet(viewsets.ModelViewSet):
     queryset = Flight.objects.order_by("departure_time", "pk")
     serializer_class = FlightSerializer
@@ -120,6 +198,14 @@ class FlightViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        summary="Get available seats for a flight",
+        description=(
+            "Returns total, occupied and available seat counts, plus every "
+            "available seat identified by row and seat number."
+        ),
+        responses=AvailableSeatsResponseSerializer,
+    )
     @action(
         detail=True,
         methods=("get",),
