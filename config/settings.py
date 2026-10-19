@@ -32,8 +32,9 @@ if not SECRET_KEY:
         "Set the SECRET_KEY environment variable when DEBUG is False."
     )
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,web").split(",") if host.strip()]
-
+ALLOWED_HOSTS = [host.strip() for host in os.getenv(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,web"
+).split(",") if host.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
