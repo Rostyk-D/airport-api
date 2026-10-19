@@ -53,4 +53,10 @@ class TicketViewSet(viewsets.ReadOnlyModelViewSet):
         "order",
     ).order_by("pk")
     serializer_class = TicketSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_staff:
+            return queryset
+        return queryset.filter(order__user=self.request.user)
