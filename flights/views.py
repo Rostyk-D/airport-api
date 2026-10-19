@@ -100,7 +100,8 @@ class AirplaneViewSet(viewsets.ModelViewSet):
                 name="ordering",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
-                description="Sort by departure_time, arrival_time or route__distance. Prefix with '-' for descending order.",
+                description="Sort by departure_time, arrival_time or route__distance."
+                            " Prefix with '-' for descending order.",
             ),
             OpenApiParameter(
                 name="page",

@@ -1,20 +1,178 @@
 # Airport API
 
-Django REST Framework API for airports, routes, airplanes, flights, tickets and orders.
+A Django REST Framework API for managing airports, routes, airplanes, flights, crew, tickets, and orders.
 
----
-## DB diagram
-![img.png](Images_README/img.png)
+## Features
 
----
+- Airport and route management.
+- Airplane, airplane type, and crew management.
+- Flight listing, filtering, searching, ordering, and pagination.
+- JWT authentication and public user registration.
+- Role-based permissions for regular and staff users.
+- Order creation with multiple tickets.
+- Ticket validation, including seat availability and airplane capacity.
+- Flight available-seat endpoint.
+- Interactive API documentation with Swagger UI.
+- Docker support.
+
+## Database Diagram
+
+![Database diagram](Images_README/img.png)
+
+## Requirements
+
+- Python 3.10 or newer, compatible with the dependencies in `requirements.txt`.
+- Git.
+- Docker and Docker Compose (optional).
+
+## Clone the Repository
+
+Clone the repository and navigate to the project directory:
+
+```bash
+git clone https://github.com/Rostyk-D/airport-api.git
+cd airport-api
+```
+
+Switch to the development branch:
+
+```bash
+git switch develop
+```
+
+## Run Locally
+
+### 1. Create a Virtual Environment
+
+Linux/macOS:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Windows:
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+### 2. Install Dependencies
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment Variables
+
+Linux/macOS:
+
+```bash
+export DEBUG=True
+export SECRET_KEY="local-development-only-change-me"
+```
+
+Windows PowerShell:
+
+```powershell
+$env:DEBUG = "True"
+$env:SECRET_KEY = "local-development-only-change-me"
+```
+
+Use a private, randomly generated `SECRET_KEY` outside local development. Never commit production secrets to the repository.
+
+The project supports a development fallback for `SECRET_KEY` only when `DEBUG=True`.
+
+### 4. Apply Database Migrations
+
+```bash
+python manage.py migrate
+```
+
+### 5. Create a Superuser
+
+Create an administrator account to access Django Admin and manage resources that require staff permissions:
+
+```bash
+python manage.py createsuperuser
+```
+
+Follow the prompts to enter the username, email address, and password.
+
+### 6. Start the Development Server
+
+```bash
+python manage.py runserver
+```
+
+The API will be available at:
+
+- API root: `http://127.0.0.1:8000/`
+- Django Admin: `http://127.0.0.1:8000/admin/`
+- Swagger UI: `http://127.0.0.1:8000/api/docs/`
+- OpenAPI schema: `http://127.0.0.1:8000/api/schema/`
+
+## Run with Docker
+
+Docker Compose uses SQLite, so no separate PostgreSQL service is required.
+
+Build and start the application:
+
+```bash
+docker compose up --build
+```
+
+The API will be available at `http://localhost:8000/`.
+
+Migrations run automatically when the container starts.
+
+Create a superuser:
+
+```bash
+docker compose exec web python manage.py createsuperuser
+```
+
+Stop the application:
+
+```bash
+docker compose down
+```
+
+The project directory is mounted into the container, allowing code changes and the SQLite database file to persist on the host.
+
 ## Authentication
 
-The API uses JWT authentication.
+The API uses JSON Web Token (JWT) authentication.
 
----
-### Login
+### 1. Register a User
 
-`POST /api/users/login/`
+Registration is public.
+
+**Endpoint:** `POST /api/users/`
+
+Example request:
+
+```json
+{
+  "username": "testuser",
+  "email": "user@example.com",
+  "password": "StrongPass123!",
+  "first_name": "Test",
+  "last_name": "User"
+}
+```
+
+Submit the request through Swagger UI or an HTTP client such as Postman.
+
+The registration endpoint accepts the fields defined by the user serializer. Adjust the example if additional required fields are configured.
+
+### 2. Obtain JWT Tokens
+
+**Endpoint:** `POST /api/users/login/`
+
+Example request:
 
 ```json
 {
@@ -23,15 +181,17 @@ The API uses JWT authentication.
 }
 ```
 
-Use the returned access token in the header:
+Use the returned access token to call protected endpoints:
 
-```
+```http
 Authorization: Bearer <access_token>
 ```
 
-Refresh an access token:
+### 3. Refresh an Access Token
 
-`POST /api/users/login/refresh/`
+**Endpoint:** `POST /api/users/login/refresh/`
+
+Example request:
 
 ```json
 {
@@ -39,36 +199,71 @@ Refresh an access token:
 }
 ```
 
-Access tokens live for 1 day and refresh tokens live for 2 days.
+Access tokens are valid for one day, and refresh tokens are valid for two days.
 
----
+### 4. Access Protected Endpoints
+
+After obtaining an access token, include it in the `Authorization` header when making requests to protected endpoints.
+
+For example:
+
+```http
+GET /api/orders/
+Authorization: Bearer <access_token>
+```
+
 ## Permissions
 
-Airports, routes, crew, airplane types, airplanes and flights can be viewed publicly.
+### Public Resources
 
-Only staff users can create, update or delete those resources.
+The following resources can be viewed without authentication:
 
-Users can register publicly. The users endpoint is admin-only after registration.
+- Airports
+- Routes
+- Crew
+- Airplane types
+- Airplanes
+- Flights
 
-Orders require authentication:
-- regular users see only their own orders;
-- admins see all orders;
-- regular users can create orders, but cannot update or delete them;
-- admins can update or delete orders.
+Only staff users can create, update, or delete these resources.
 
-Tickets are read-only through the API. Tickets are created together with an order.
+### Users
 
----
-## Tickets and baggage
+- User registration is public.
+- User listing and management require staff access after registration.
+
+### Orders
+
+- Authentication is required.
+- Regular users can view only their own orders.
+- Staff users can view all orders.
+- Regular users can create orders but cannot update or delete them.
+- Staff users can update and delete orders.
+
+### Tickets
+
+- Tickets are read-only through the API.
+- Tickets are created together with an order.
+- Authenticated users can list tickets belonging to their own orders.
+- Staff users can view all tickets.
+
+## Tickets and Baggage
 
 Each ticket has a `baggage_type` field:
-- `1` — Light
-- `2` — Medium
-- `3` — Heavy
 
-The API stores the baggage category only; baggage weight is not a separate ticket field.
+| Value | Baggage Type |
+|---|---|
+| `1` | Light |
+| `2` | Medium |
+| `3` | Heavy |
 
-Example order with two tickets:
+The API stores the baggage category; baggage weight is not stored as a separate ticket field.
+
+### Create an Order with Two Tickets
+
+**Endpoint:** `POST /api/orders/`
+
+Example request:
 
 ```json
 {
@@ -89,104 +284,95 @@ Example order with two tickets:
 }
 ```
 
-The API validates the flight departure time, row and seat limits, seat availability, duplicate seats inside one order, and the minimum of one ticket per order. Tickets can be listed only by authenticated users, and regular users see only tickets belonging to their own orders. Staff users can see all tickets.
+The API validates:
 
----
+- Flight departure time.
+- Row and seat limits for the airplane.
+- Seat availability.
+- Duplicate seats within an order.
+- At least one ticket per order.
+
+The request must be authenticated.
+
 ## Flights
 
-Filter by route:
+The flights endpoint supports filtering, searching, ordering, and pagination.
 
-`GET /api/flights/?route=1`
+### Filter by Route
 
-Filter by airplane:
-
-`GET /api/flights/?airplane=1`
-
-Filter by airports:
-
-`GET /api/flights/?source=1&destination=2`
-
-Filter by departure date:
-
-`GET /api/flights/?departure_date=2026-10-01`
-
-Search by airport, city, airplane or airplane type:
-
-`GET /api/flights/?search=Warsaw`
-
-Order results:
-
-`GET /api/flights/?ordering=departure_time`
-
-Pagination:
-
-`GET /api/flights/?page=2&page_size=20`
-
-Available seats for a flight:
-
-`GET /api/flights/1/available-seats/`
-
----
-## API documentation
-
-Swagger UI:
-
-`GET /api/docs/`
-
-OpenAPI schema:
-
-`GET /api/schema/`
-
----
-## Run with Docker
-
-Docker Compose uses SQLite; no PostgreSQL service is required.
-
-Build the image and start the API:
-
-```bash
-docker compose up --build
+```http
+GET /api/flights/?route=1
 ```
 
-The API will be available at `http://localhost:8000/`. Migrations run automatically when the container starts. The project directory is mounted into the container, so code changes and the SQLite database file remain on your machine.
+### Filter by Airplane
 
-Stop the container:
-
-```bash
-docker compose down
+```http
+GET /api/flights/?airplane=1
 ```
 
-## Run locally
+### Filter by Source and Destination Airports
 
-Set environment variables before starting Django. Use a private random `SECRET_KEY` outside development; the built-in development fallback is enabled only when `DEBUG=True`.
-
-Linux/macOS example:
-
-```bash
-export DEBUG=True
-export SECRET_KEY="local-development-only-change-me"
+```http
+GET /api/flights/?source=1&destination=2
 ```
 
-Install dependencies:
+### Filter by Departure Date
 
-```bash
-pip install -r requirements.txt
+```http
+GET /api/flights/?departure_date=2026-10-01
 ```
 
-Apply migrations:
+### Search by Airport, City, Airplane, or Airplane Type
 
-```bash
-python manage.py migrate
+```http
+GET /api/flights/?search=Warsaw
 ```
 
-Run the server:
+### Order Results
 
-```bash
-python manage.py runserver
+```http
+GET /api/flights/?ordering=departure_time
 ```
 
-Run tests:
+### Pagination
+
+```http
+GET /api/flights/?page=2&page_size=20
+```
+
+### Get Available Seats
+
+```http
+GET /api/flights/1/available-seats/
+```
+
+Replace the example IDs with existing database records.
+
+## API Documentation
+
+Interactive API documentation is available through Swagger UI.
+
+- Swagger UI: `http://127.0.0.1:8000/api/docs/`
+- OpenAPI schema: `http://127.0.0.1:8000/api/schema/`
+
+Swagger UI can be used to inspect endpoints, review request and response schemas, and try API requests.
+
+## Run Tests
+
+Run the project's automated tests:
 
 ```bash
 python manage.py test
+```
+
+Check the Django configuration:
+
+```bash
+python manage.py check
+```
+
+Check whether model changes require new migrations:
+
+```bash
+python manage.py makemigrations --check
 ```

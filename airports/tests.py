@@ -2,7 +2,6 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from airports.models import Airport
-from airports.models import Route
 from users.models import User
 
 
