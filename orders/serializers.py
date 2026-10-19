@@ -19,9 +19,11 @@ class TicketSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "order")
 
     def validate(self, attrs):
-        flight = attrs.get("flight")
-        row = attrs.get("row")
-        seat = attrs.get("seat")
+        # During partial updates, validate the final ticket state rather than
+        # skipping validation when one of the fields is omitted.
+        flight = attrs.get("flight", getattr(self.instance, "flight", None))
+        row = attrs.get("row", getattr(self.instance, "row", None))
+        seat = attrs.get("seat", getattr(self.instance, "seat", None))
 
         if flight and flight.departure_time <= timezone.now():
             raise serializers.ValidationError(
@@ -33,8 +35,8 @@ class TicketSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Під час оновлення перевіряємо тільки поля,
-        # які передали в запиті.
+        # A partially populated serializer may not have enough information
+        # to validate a new ticket. Existing tickets use their instance values.
         if flight is None or row is None or seat is None:
             return attrs
 
@@ -116,11 +118,15 @@ class OrderSerializer(serializers.ModelSerializer):
         seats = set()
 
         for ticket in tickets or []:
-            seat_key = (
-                ticket["flight"].id,
-                ticket["row"],
-                ticket["seat"],
-            )
+            # Nested ticket fields are required by TicketSerializer, but keep
+            # this validation defensive if the serializer changes later.
+            flight = ticket.get("flight")
+            row = ticket.get("row")
+            seat = ticket.get("seat")
+            if flight is None or row is None or seat is None:
+                continue
+
+            seat_key = (flight.id, row, seat)
 
             if seat_key in seats:
                 raise serializers.ValidationError(
