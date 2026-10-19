@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 
 from airports.models import Airport, Route
 from flights.models import Airplane, AirplaneType, Crew, Flight
-from orders.models import Order
+from orders.models import Order, Ticket
 from users.models import User
 
 
@@ -290,3 +290,41 @@ class OrderAndTicketApiTests(APITestCase):
             response.status_code,
             status.HTTP_405_METHOD_NOT_ALLOWED,
         )
+
+    def test_ticket_endpoint_requires_authentication(self):
+        response = self.client.get("/api/tickets/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_users_only_see_tickets_from_their_own_orders(self):
+        own_order = Order.objects.create(user=self.user)
+        other_order = Order.objects.create(user=self.other_user)
+        Ticket.objects.create(
+            row=1,
+            seat=1,
+            baggage_type=1,
+            flight=self.flight,
+            order=own_order,
+        )
+        Ticket.objects.create(
+            row=1,
+            seat=2,
+            baggage_type=2,
+            flight=self.flight,
+            order=other_order,
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.get("/api/tickets/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["order"], own_order.id)
+
+        self.client.force_authenticate(self.admin)
+        admin_response = self.client.get("/api/tickets/")
+        self.assertEqual(admin_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(admin_response.data["count"], 2)
