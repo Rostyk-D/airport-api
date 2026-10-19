@@ -61,12 +61,12 @@ Tickets are read-only through the API. Tickets are created together with an orde
 ---
 ## Tickets and baggage
 
-Each ticket has a type:
-- `1` — Light: 1–2 kg
-- `2` — Medium: 3–5 kg
-- `3` — Heavy: 6–10 kg
+Each ticket has a `baggage_type` field:
+- `1` — Light
+- `2` — Medium
+- `3` — Heavy
 
-The buyer provides both the ticket type and the baggage weight. The API validates that the selected weight belongs to the selected type.
+The API stores the baggage category only; baggage weight is not a separate ticket field.
 
 Example order with two tickets:
 
@@ -74,24 +74,22 @@ Example order with two tickets:
 {
   "tickets": [
     {
-      "row": 5,
-      "seat": 10,
+      "row": 1,
+      "seat": 1,
       "flight": 1,
-      "ticket_type": 1,
-      "baggage_weight": 2
+      "baggage_type": 1
     },
     {
-      "row": 5,
-      "seat": 11,
+      "row": 1,
+      "seat": 2,
       "flight": 1,
-      "ticket_type": 3,
-      "baggage_weight": 10
+      "baggage_type": 3
     }
   ]
 }
 ```
 
-The API also validates the flight date, row and seat limits, seat availability, duplicate seats inside one order, and the minimum of one ticket per order.
+The API validates the flight departure time, row and seat limits, seat availability, duplicate seats inside one order, and the minimum of one ticket per order. Tickets can be listed only by authenticated users, and regular users see only tickets belonging to their own orders. Staff users can see all tickets.
 
 ---
 ## Flights
@@ -159,6 +157,15 @@ docker compose down
 ```
 
 ## Run locally
+
+Set environment variables before starting Django. Use a private random `SECRET_KEY` outside development; the built-in development fallback is enabled only when `DEBUG=True`.
+
+Linux/macOS example:
+
+```bash
+export DEBUG=True
+export SECRET_KEY="local-development-only-change-me"
+```
 
 Install dependencies:
 
