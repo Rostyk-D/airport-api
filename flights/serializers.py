@@ -116,3 +116,16 @@ class FlightSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+
+class AvailableSeatSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    seat = serializers.IntegerField()
+
+
+class AvailableSeatsResponseSerializer(serializers.Serializer):
+    flight = serializers.IntegerField()
+    total_seats = serializers.IntegerField()
+    occupied_seats = serializers.IntegerField()
+    available_seats = serializers.IntegerField()
+    seats = AvailableSeatSerializer(many=True)
