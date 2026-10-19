@@ -10,7 +10,7 @@ from users.serializers import (
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.order_by("pk")
 
     def get_permissions(self):
         if self.action == "create":

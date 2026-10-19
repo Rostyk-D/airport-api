@@ -9,6 +9,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         Order.objects
         .select_related("user")
         .prefetch_related("tickets__flight__airplane")
+        .order_by("pk")
     )
     serializer_class = OrderSerializer
 
@@ -37,6 +38,6 @@ class TicketViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ticket.objects.select_related(
         "flight__airplane",
         "order",
-    )
+    ).order_by("pk")
     serializer_class = TicketSerializer
     permission_classes = (permissions.AllowAny,)

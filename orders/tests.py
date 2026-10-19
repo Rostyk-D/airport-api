@@ -54,6 +54,7 @@ class OrderAndTicketApiTests(APITestCase):
             last_name="Doe",
         )
         departure = timezone.now() + timedelta(days=2)
+
         self.flight = Flight.objects.create(
             route=route,
             airplane=airplane,
@@ -62,21 +63,21 @@ class OrderAndTicketApiTests(APITestCase):
         )
         self.flight.crew.add(crew)
 
-    def order_payload(self, seat=1, ticket_type=1, baggage_weight=2):
+    def order_payload(self, seat=1, baggage_type=1):
         return {
             "tickets": [
                 {
                     "row": 1,
                     "seat": seat,
                     "flight": self.flight.id,
-                    "ticket_type": ticket_type,
-                    "baggage_weight": baggage_weight,
+                    "baggage_type": baggage_type,
                 }
             ]
         }
 
     def test_unauthenticated_user_cannot_access_orders(self):
         response = self.client.get("/api/orders/")
+
         self.assertEqual(
             response.status_code,
             status.HTTP_401_UNAUTHORIZED,
@@ -101,6 +102,7 @@ class OrderAndTicketApiTests(APITestCase):
         other_order = Order.objects.create(user=self.other_user)
 
         self.client.force_authenticate(self.user)
+
         own_response = self.client.get(
             f"/api/orders/{own_order.id}/"
         )
@@ -135,24 +137,37 @@ class OrderAndTicketApiTests(APITestCase):
                         "row": 1,
                         "seat": 1,
                         "flight": self.flight.id,
-                        "ticket_type": 1,
-                        "baggage_weight": 2,
+                        "baggage_type": 1,
                     },
                     {
                         "row": 1,
                         "seat": 2,
                         "flight": self.flight.id,
-                        "ticket_type": 2,
-                        "baggage_weight": 5,
+                        "baggage_type": 2,
+                    },
+                    {
+                        "row": 2,
+                        "seat": 3,
+                        "flight": self.flight.id,
+                        "baggage_type": 3,
                     },
                 ]
             },
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(response.data["tickets"]), 2)
-        self.assertEqual(self.flight.tickets.count(), 2)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(len(response.data["tickets"]), 3)
+        self.assertEqual(self.flight.tickets.count(), 3)
+
+        returned_types = {
+            ticket["baggage_type"]
+            for ticket in response.data["tickets"]
+        }
+        self.assertEqual(returned_types, {1, 2, 3})
 
     def test_user_cannot_update_or_delete_order(self):
         order = Order.objects.create(user=self.user)
@@ -160,7 +175,7 @@ class OrderAndTicketApiTests(APITestCase):
 
         patch_response = self.client.patch(
             f"/api/orders/{order.id}/",
-            {"tickets": self.order_payload()["tickets"]},
+            self.order_payload(),
             format="json",
         )
         delete_response = self.client.delete(
@@ -178,6 +193,7 @@ class OrderAndTicketApiTests(APITestCase):
 
     def test_admin_can_replace_tickets_in_order(self):
         self.client.force_authenticate(self.user)
+
         order_response = self.client.post(
             "/api/orders/",
             self.order_payload(),
@@ -200,8 +216,7 @@ class OrderAndTicketApiTests(APITestCase):
                         "row": 2,
                         "seat": 3,
                         "flight": self.flight.id,
-                        "ticket_type": 3,
-                        "baggage_weight": 10,
+                        "baggage_type": 3,
                     }
                 ]
             },
@@ -211,34 +226,18 @@ class OrderAndTicketApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["tickets"]), 1)
         self.assertEqual(response.data["tickets"][0]["seat"], 3)
+        self.assertEqual(response.data["tickets"][0]["baggage_type"], 3)
 
-    def test_ticket_type_matches_baggage_range(self):
+    def test_invalid_baggage_type_is_rejected(self):
         self.client.force_authenticate(self.user)
 
-        invalid_payloads = (
-            self.order_payload(
-                seat=1,
-                ticket_type=1,
-                baggage_weight=3,
-            ),
-            self.order_payload(
-                seat=2,
-                ticket_type=2,
-                baggage_weight=2,
-            ),
-            self.order_payload(
-                seat=3,
-                ticket_type=3,
-                baggage_weight=5,
-            ),
-        )
-
-        for payload in invalid_payloads:
+        for invalid_type in (0, 4, 10):
             response = self.client.post(
                 "/api/orders/",
-                payload,
+                self.order_payload(baggage_type=invalid_type),
                 format="json",
             )
+
             self.assertEqual(
                 response.status_code,
                 status.HTTP_400_BAD_REQUEST,
@@ -278,7 +277,9 @@ class OrderAndTicketApiTests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
-    def test_tickets_are_read_only(self):
+    def test_ticket_endpoint_is_read_only(self):
+        self.client.force_authenticate(self.user)
+
         response = self.client.post(
             "/api/tickets/",
             {},

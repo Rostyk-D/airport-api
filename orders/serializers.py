@@ -13,20 +13,17 @@ class TicketSerializer(serializers.ModelSerializer):
             "row",
             "seat",
             "flight",
-            "ticket_type",
-            "baggage_weight",
+            "baggage_type",
             "order",
         )
         read_only_fields = ("id", "order")
 
     def validate(self, attrs):
-        flight = attrs["flight"]
-        row = attrs["row"]
-        seat = attrs["seat"]
-        ticket_type = attrs["ticket_type"]
-        baggage_weight = attrs["baggage_weight"]
+        flight = attrs.get("flight")
+        row = attrs.get("row")
+        seat = attrs.get("seat")
 
-        if flight.departure_time <= timezone.now():
+        if flight and flight.departure_time <= timezone.now():
             raise serializers.ValidationError(
                 {
                     "flight": (
@@ -36,19 +33,10 @@ class TicketSerializer(serializers.ModelSerializer):
                 }
             )
 
-        min_weight, max_weight = (
-            Ticket.TICKET_TYPE_WEIGHT_RANGES[ticket_type]
-        )
-
-        if not min_weight <= baggage_weight <= max_weight:
-            raise serializers.ValidationError(
-                {
-                    "baggage_weight": (
-                        f"Ticket type {ticket_type} allows baggage "
-                        f"from {min_weight} to {max_weight} kg."
-                    )
-                }
-            )
+        # Під час оновлення перевіряємо тільки поля,
+        # які передали в запиті.
+        if flight is None or row is None or seat is None:
+            return attrs
 
         airplane = flight.airplane
 

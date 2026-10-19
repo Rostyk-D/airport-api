@@ -9,12 +9,12 @@ from users.permissions import IsAdminOrReadOnly
 
 
 class AirportViewSet(viewsets.ModelViewSet):
-    queryset = Airport.objects.all()
+    queryset = Airport.objects.order_by("pk")
     serializer_class = AirportsSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.all()
+    queryset = Route.objects.order_by("pk")
     serializer_class = RouteSerializer
     permission_classes = (IsAdminOrReadOnly,)

@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -18,32 +19,23 @@ class Order(models.Model):
 
 
 class Ticket(models.Model):
-    TICKET_TYPE_CHOICES = (
+    BAGGAGE_TYPE_CHOICES = (
         (1, "Light"),
         (2, "Medium"),
         (3, "Heavy"),
     )
-    TICKET_TYPE_WEIGHT_RANGES = {
-        1: (1, 2),
-        2: (3, 5),
-        3: (6, 10),
-    }
 
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
-    ticket_type = models.PositiveSmallIntegerField(
-        choices=TICKET_TYPE_CHOICES,
+
+    baggage_type = models.PositiveSmallIntegerField(
+        choices=BAGGAGE_TYPE_CHOICES,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(3),
         ],
     )
-    baggage_weight = models.PositiveSmallIntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10),
-        ],
-    )
+
     flight = models.ForeignKey(
         Flight,
         on_delete=models.CASCADE,
@@ -63,37 +55,10 @@ class Ticket(models.Model):
             ),
             models.CheckConstraint(
                 condition=models.Q(
-                    baggage_weight__gte=1,
-                    baggage_weight__lte=10,
+                    baggage_type__gte=1,
+                    baggage_type__lte=3,
                 ),
-                name="ticket_baggage_weight_valid",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(
-                    ticket_type__gte=1,
-                    ticket_type__lte=3,
-                ),
-                name="ticket_type_valid",
-            ),
-            models.CheckConstraint(
-                condition=(
-                    models.Q(
-                        ticket_type=1,
-                        baggage_weight__gte=1,
-                        baggage_weight__lte=2,
-                    )
-                    | models.Q(
-                        ticket_type=2,
-                        baggage_weight__gte=3,
-                        baggage_weight__lte=5,
-                    )
-                    | models.Q(
-                        ticket_type=3,
-                        baggage_weight__gte=6,
-                        baggage_weight__lte=10,
-                    )
-                ),
-                name="ticket_type_baggage_range_valid",
+                name="ticket_baggage_type_valid",
             ),
         ]
 
@@ -101,6 +66,5 @@ class Ticket(models.Model):
         return (
             f"Flight {self.flight_id}: "
             f"row {self.row}, seat {self.seat}, "
-            f"type {self.ticket_type}, "
-            f"baggage {self.baggage_weight} kg"
+            f"baggage type {self.get_baggage_type_display()}"
         )

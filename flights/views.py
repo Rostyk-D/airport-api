@@ -22,25 +22,25 @@ from users.permissions import IsAdminOrReadOnly
 
 
 class CrewViewSet(viewsets.ModelViewSet):
-    queryset = Crew.objects.all()
+    queryset = Crew.objects.order_by("pk")
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
-    queryset = AirplaneType.objects.all()
+    queryset = AirplaneType.objects.order_by("pk")
     serializer_class = AirplaneTypeSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
+    queryset = Airplane.objects.order_by("pk")
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class FlightViewSet(viewsets.ModelViewSet):
-    queryset = Flight.objects.all()
+    queryset = Flight.objects.order_by("departure_time", "pk")
     serializer_class = FlightSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
@@ -57,7 +57,7 @@ class FlightViewSet(viewsets.ModelViewSet):
         "arrival_time",
         "route__distance",
     )
-    ordering = ("departure_time",)
+    ordering = ("departure_time", "pk")
 
     @staticmethod
     def _positive_int_param(request, name):
